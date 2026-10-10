@@ -24,3 +24,20 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/mrsandwick/my-site:${{ github.sha }}
+
+      - name: Check out homelab-gitops
+        uses: actions/checkout@v4
+        with:
+          repository: MrSandwick/homelab-gitops
+          ssh-key: ${{ secrets.GITOPS_DEPLOY_KEY }}
+          path: gitops
+
+      - name: Update image tag in homelab-gitops
+        run: |
+          cd gitops
+          sed -i "s|image: ghcr.io/mrsandwick/my-site:.*|image: ghcr.io/mrsandwick/my-site:${{ github.sha }}|" apps/my-site/my-site.yaml
+          grep -q "my-site:${{ github.sha }}" apps/my-site/my-site.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "my-site: deploy ${{ github.sha }}"
+          git push
